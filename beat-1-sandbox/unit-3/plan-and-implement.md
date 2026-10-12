@@ -15,11 +15,7 @@ label is not graded.
 
 **GitHub username**
 
-[Your GitHub username, exactly as it appears on your profile - no @, no
-profile URL. Your comment upstream is identified by this name, and it is
-the only thing that ties it to you. Several students may plan the same
-house issue, so this is what keeps their comments off your score and
-yours off theirs.]
+kelp-Shake
 
 **Plan comment**
 
@@ -50,28 +46,30 @@ fields.
 
 **Run history**
 
-[The agreement score of each run you did, in order. A single run is a complete answer if
-only one run occurred. **The last score in your list must match the agreement line in the
-`eval-run.txt` you committed** — that file is the record of your final run.]
+1. Run 1: 19/20. `pkg-14` was the only disagreement (gold accept, my rubric reject).
+2. Run 2: 20/20, after rewording `buildable-by-a-stranger`. This matches the agreement line in `eval-run.txt` ("agreement: 20/20 scored items (bar: 18/20: PASS)").
 
 **Package analysis**
 
-[Pick one scored package (`pkg-01` through `pkg-20` — the four `calib-` packages are never
-scored). Name it by id, say what your rubric decided and what the gold label said, and
-explain why your rubric read it that way.]
+`pkg-14` (zellij-org/zellij#5174, the OSC color sequences leaking on reattach). The gold label is accept. In run 1 my rubric said reject, so it disagreed. In run 2 it said accept, so it agrees.
+
+In run 1 every check passed except `buildable-by-a-stranger`, and the grader's evidence was: "exact functions to be pinned in the PR after tracing the query issuance with debug logs" — only module-level locations named; a stranger cannot make the first edit without asking which file or function to open." My rubric read it that way because the old pass condition said the plan had to name "the files or functions to change" so that "a stranger could start the first edit without asking a question". The plan named the area (the reattach path in `zellij-server`'s session connection handling and `zellij-client`'s terminal query issuance) and the change (drain pending OSC color responses before pane input is wired), but not exact functions, so the grader failed it.
+
+The gold label says accept because the plan is honest about what is not pinned yet and still tells a reader where to start and what to do, which is different from a plan that names nothing. I changed the check, and in run 2 the grader's evidence was: "Modules named: 'zellij-server (session connection handling)' and 'zellij-client's terminal query issuance'; change is 'drain OSC responses before pane input is wired' — sufficient for a stranger to locate and start." The verdict became accept.
 
 **Check rationale**
 
-[Quote one check from the `rubric.md` you uploaded to `tools/plan-check/`, exactly as it reads now.
-Then say why it reads that way — what you revised to get there, or what you rejected in
-favour of it.]
+The check as it reads in `tools/plan-check/rubric.md`:
+
+| buildable-by-a-stranger | The plan's files and approach, read as if by someone who has not seen the repo. | **Passes when** the plan names the area of code to change (a file, module, or function) and what the change is, so a stranger would know where to start. | required |
+
+It reads that way because of `pkg-14`. My first version said "**Passes when** the plan names the files or functions to change and what the change is, so a stranger could start the first edit without asking a question." That was too strict: it failed a plan that named the modules and the exact change but left the function names for tracing in the PR. I rejected keeping the strict wording, because it made the check grade whether the plan had already finished the investigation, which is not what "buildable" should mean. I also rejected dropping the check, since the unbuildable packages need it to be rejected. I changed it to "area of code (a file, module, or function)" and "would know where to start", so a plan with a located area and a stated change passes, and a plan with no location at all still fails.
 
 **Trade-offs**
 
-[Every check gives something up. Any one of these is a complete answer: a package whose
-result it changes, a canary you re-ran with `--only`, a case you accept it will miss, or a
-stated reason nothing changed elsewhere. "Nothing changed, and here is how I know" earns
-the point in full when the reason follows.]
+Loosening `buildable-by-a-stranger` gives up some precision: a plan that names only a module and a general change now passes, where the old wording would have held it for not naming a function. A vague plan that happens to name a module could slip through, and I accept that, because the check only needs to separate "no idea where to start" from "knows where to start".
+
+I did not re-run canaries with `--only`. I went straight to a second full run, so the evidence that nothing else flipped is the run itself. All 20 packages agreed, and the three `unbuildable` packages still rejected on this same check: `pkg-10` ("No file, module, or function named; 'investigate the git modules' performance' gives a stranger nowhere to start."), `pkg-17` ("Plan writes '(gocui? tcell? not sure which layer is responsible)' — no files, modules, or functions named"), and `pkg-18` ("add a recover() safety net somewhere around linter execution" — no file, module, or function named anywhere in the plan"). That shows the looser wording still separates them from `pkg-14`.
 
 ---
 
