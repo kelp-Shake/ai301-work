@@ -19,9 +19,21 @@ kelp-Shake
 
 **Plan comment**
 
-[Link to the comment where you posted your plan on the issue. Use the comment's own
-permalink. **Then paste the text of that comment underneath the link** — the pasted text is
-what this field is graded on, so copy across what you actually posted.]
+https://github.com/codepath/pathreview-ai301-fa26-s1/issues/17#issuecomment-6117552702
+
+Plan for #17, building on my repro above.
+
+**What I found:** `Orchestrator.run` in `agent/orchestrator.py` writes to Redis once, after the whole tool loop. In my repro, killing the third of four tools (with `KeyboardInterrupt` and with `SIGKILL`) left `redis after kill: None`, and the next run executed `tech_detector` and `readme_scorer` again. From reading the code (not yet tested), there is a second gap: `run` loads the stored session state but never uses it to skip a finished tool, so a per-tool write alone would not be enough.
+
+**What I'll do:** in the tool loop of `Orchestrator.run`, (1) write each tool's result to Redis as soon as it succeeds, and (2) skip a tool on restart when Redis already holds a successful result for it with the same input hash. The change is in `agent/orchestrator.py`, plus one new unit test in `tests/unit/`.
+
+**Not doing:** wiring the API to the orchestrator (`_run_agent_orchestration` is still a placeholder), or any change to `ContextManager`, `SessionStore` or the TTL.
+
+**How I'll prove it:** re-run my `repro17.py` from the repro comment. After the fix, `redis after kill` should hold the two finished tools' results, and a restarted run should call only `skill_extractor` and `market_analyzer`.
+
+**Unknowns:** I haven't tested whether the real tools' results serialize to JSON (the repro used stubs), and `market_analyzer`'s input is constant, so its input hash won't catch changes upstream. I'll flag both in the PR.
+
+AI disclosure: I'm using Claude Code to help plan and build this, and I read every diff before keeping it.
 
 ---
 
@@ -29,10 +41,7 @@ what this field is graded on, so copy across what you actually posted.]
 
 **Branch**
 
-[The name of the branch you built the change on, exactly as it appears in your fork. The
-naming shape is a type prefix, then the issue number, then a short description. **The issue
-number in the branch name must be the number of the issue you claimed** — a name carrying
-any other number does not satisfy this field.]
+fix/17-persist-tool-progress
 
 **Evidence**
 
