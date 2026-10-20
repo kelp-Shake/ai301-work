@@ -45,8 +45,41 @@ fix/17-persist-tool-progress
 
 **Evidence**
 
-[Your Unit 2 reproduction steps re-run against the built change: the before, then the
-after. Paste both, including the commands you ran and their output.]
+I re-ran my unit 2 repro (`repro17.py`, copied into the fork root, Redis from `docker compose up -d redis`, scratch db 15) with the same command for both runs:
+
+```
+.venv/bin/python repro17.py 2>&1 | grep -E "^(run|calls|redis|B )"
+```
+
+Before (`agent/orchestrator.py` at `main`, `f89c06f`):
+
+```
+run 1 interrupted
+calls after run 1: {'tech_detector': 1, 'readme_scorer': 1, 'skill_extractor': 1}
+redis after run 1: None keys: []
+calls after run 2 (restart): {'tech_detector': 1, 'readme_scorer': 1, 'skill_extractor': 1, 'market_analyzer': 1}
+B child exit code: -9 (-9 = killed by SIGKILL)
+B tools started in child: ['tech_detector', 'readme_scorer', 'skill_extractor']
+B redis after kill: None keys: []
+B calls in fresh process after kill: {'tech_detector': 1, 'readme_scorer': 1, 'skill_extractor': 1, 'market_analyzer': 1}
+```
+
+After (branch `fix/17-persist-tool-progress`, with my change):
+
+```
+run 1 interrupted
+calls after run 1: {'tech_detector': 1, 'readme_scorer': 1, 'skill_extractor': 1}
+redis after run 1: {'_inputs': {'tech_detector': 'cdf20a997479a34f74a277a8cf79e53c3a9c1d7c9642619799171cb7571dde50', 'readme_scorer': 'c56162a19a44acadd6432612777cbb8d9ea33c3f838ae5931ec982454ee75b21'}, 'tech_detector': {'tool': 'tech_detector', 'ok': True}, 'readme_scorer': {'tool': 'readme_scorer', 'ok': True}} keys: [b'session:p1']
+calls after run 2 (restart): {'skill_extractor': 1, 'market_analyzer': 1}
+B child exit code: -9 (-9 = killed by SIGKILL)
+B tools started in child: ['tech_detector', 'readme_scorer', 'skill_extractor']
+B redis after kill: {'_inputs': {'tech_detector': 'cdf20a997479a34f74a277a8cf79e53c3a9c1d7c9642619799171cb7571dde50', 'readme_scorer': 'c56162a19a44acadd6432612777cbb8d9ea33c3f838ae5931ec982454ee75b21'}, 'tech_detector': {'tool': 'tech_detector', 'ok': True}, 'readme_scorer': {'tool': 'readme_scorer', 'ok': True}} keys: [b'session:p2']
+B calls in fresh process after kill: {'skill_extractor': 1, 'market_analyzer': 1}
+```
+
+Redis now holds the two finished tools' results after both the `KeyboardInterrupt` and the `SIGKILL`, and the restarted run only calls `skill_extractor` and `market_analyzer`. All four expected results in my plan's test plan matched.
+
+I also ran `make test-unit`: 377 passed, 53 xfailed. That includes my new `tests/unit/test_orchestrator_resume.py`, whose two tests failed on the old code before I changed `orchestrator.py`.
 
 ## Eval iterations
 
