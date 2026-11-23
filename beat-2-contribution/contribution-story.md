@@ -55,10 +55,9 @@ happened; these entries are the toolkit's own timeline.
 All four entries are graded. Keep every heading below, and fill each
 one in the week it belongs to.
 
-**Unit 5: [one line on the tool work]**
+**Unit 5: Built my scout around a company filter, reset it, and learned its accepts go stale within days**
 
-[2-4 sentences: what you built (the scout, your strategy), what broke
-or fell short, what changed because of it.]
+I installed the scout and first aimed it at startups, hand-verifying 29 company-backed repos. It overwhelmed me and the issues did not excite me, so on Nov 11 I reset it and looked for open source products I would enjoy. The scout still fell short: its accepts went stale (openslop #1221 closed within a day), its `unclaimed` check ignored a merged PR (cursor-boston #553), and nothing checked that the problem still exists (devtrack #1479 passed 6 of 6 with nothing left to fix). I checked the code by hand before claiming openbench-ai #107, which was then merged as PR #188, and only afterward added a `still-exists` check, a merged-PR rule, and a better tie-break to my scout.
 
 **Unit 6: [one line on the tool work]**
 
